@@ -55,7 +55,7 @@ Cycle 3
 
 HP = 180 - 270
 
-Scaling disesuaikan secara otomatis oleh Stage Generator.
+Scaling disesuaikan secara otomatis oleh Stage Generator menggunakan konstanta CYCLE_SCALE.
 
 ---
 
@@ -65,10 +65,10 @@ Damage tidak boleh bersifat tetap.
 
 Setiap serangan harus menghasilkan nilai yang berbeda.
 
-Formula:
-
 Base Damage =
 Random(10 - 20)
+
+Implementasi: nilai MIN = 10 dan MAX = 20 disimpan sebagai konstanta DAMAGE_MIN dan DAMAGE_MAX di damage-calculator.js.
 
 Final Damage =
 Base Damage + Modifier
@@ -258,25 +258,21 @@ Default:
 
 800ms - 1200ms per action.
 
-Contoh:
+Implementasi aktual menggunakan delay per-event (bukan fixed interval):
 
-Attack
+| Event Type | Delay |
+|---|---|
+| ACTOR | 400ms |
+| TURN_START | 600ms |
+| DODGE / MISS | 600ms |
+| DEATH / CLONE_DESTROYED | 800ms |
+| ATTACK / COUNTER / REFLECT_CHAOS | 900ms |
+| CRITICAL | 1100ms |
+| DAMAGE / CHAIN_LIGHTNING | 500ms |
+| VICTORY / DEFEAT | 1500ms |
+| lainnya | 400ms |
 
-↓ 800ms
-
-Projectile
-
-↓ 800ms
-
-Impact
-
-↓ 800ms
-
-Damage
-
-↓ 800ms
-
-Next Turn
+Setiap event diproses satu per satu melalui antrian (event queue) dengan setTimeout.
 
 ---
 
@@ -305,6 +301,48 @@ Mode ini dipersiapkan untuk pengembangan berikutnya.
 
 ---
 
+# 13.4 Animation Sync System (pendingDamage / pendingDeath)
+
+## Masalah
+
+Battle Engine menghitung semua damage dalam satu turn sebelum mengembalikan daftar event. Akibatnya, saat UI me-render tiap event, HP entity sudah dalam keadaan post-damage — animasi muncul terlambat.
+
+## Solusi: pendingDamage
+
+Setiap kali turn baru dimulai, app.js memindai seluruh event queue dan menghitung total damage per entity:
+
+```
+pendingDamage[entityName] = jumlah semua damage yang akan terjadi di turn ini
+```
+
+Sebelum render tiap event, UI menambahkan pendingDamage kembali ke HP entity sehingga menampilkan nilai pre-damage. Setelah animasi event selesai (pada setTimeout berikutnya), damage dikurangkan dari pendingDamage dan entity menampilkan HP yang sebenarnya.
+
+Alur visual:
+
+1. ATTACK — HP masih pre-damage (100 + 20 = 120, ditampilkan sebagai 100 karena max HP)
+2. DAMAGE — animasi impact + float "-20", HP masih pre-damage
+3. Event berikutnya — pendingDamage dikurangi, HP menampilkan nilai real (80)
+
+## Solusi: pendingDeath
+
+Entity yang mati dalam satu turn langsung di-set `isAlive = false` oleh engine. Agar kematian tidak tampil sebelum animasi selesai, app.js mencatat entity yang akan mati di `pendingDeath`.
+
+Selama DEATH event berlangsung:
+
+* Render menampilkan entity sebagai "hidup" dengan HP = 0 (bukan "✕ mati")
+* Animasi skull "✕" diputar
+* Setelah delay DEATH selesai, entity dihapus dari pendingDeath
+* Render event berikutnya menampilkan entity sebagai "✕ mati"
+
+Alur visual kematian:
+
+1. ATTACK — proyektil, HP pre-damage
+2. DAMAGE — impact, float, HP pre-damage
+3. DEATH — entity di 0 HP, animasi skull, pendingDeath dibersihkan
+4. Event berikutnya — entity tampil sebagai "✕ mati"
+
+---
+
 # 14. Stage Progression Bonus Skill
 
 ## Deskripsi
@@ -312,12 +350,14 @@ Mode ini dipersiapkan untuk pengembangan berikutnya.
 Setiap kali Hero naik ke Stage berikutnya:
 
 * Hero mendapatkan kesempatan memilih 1 Skill tambahan.
-* Skill yang ditawarkan dipilih secara acak dari skill yang belum dimiliki.
+* Sistem menampilkan **2 opsi skill** yang dipilih secara acak dari skill yang belum dimiliki.
+* Pemain mengklik salah satu kartu skill untuk mengambilnya.
 * Skill yang sudah dipilih sebelumnya tidak akan muncul lagi.
-* Pemain dapat memilih untuk mengambil skill tersebut atau melewatinya.
+* Pemain dapat memilih untuk melewati (Skip) tanpa mengambil skill.
 
 ## Aturan
 
 * Jika semua 11 skill sudah dimiliki, tidak ada skill yang ditawarkan.
 * Skill baru langsung aktif saat battle stage berikutnya dimulai.
 * Tidak ada batasan jumlah maksimal skill setelah bonus stage. (Awal hanya 4, bisa bertambah).
+* Jika hanya 1 skill tersisa yang belum dimiliki, hanya 1 kartu yang ditampilkan.
