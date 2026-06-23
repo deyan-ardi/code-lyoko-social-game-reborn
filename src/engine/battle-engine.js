@@ -46,13 +46,6 @@ export class BattleEngine {
     const target = this.resolveTarget(actor);
     if (!target) return this.finalize(ev);
 
-    if (actor.isHero && this.hero.freezeCharge > 0 && !target.isClone && Math.random() > SKILL_DATA.FREEZE_COMBO_CHANCE) {
-      this.hero.freezeCharge--;
-      target.frozenTurns = 1;
-      ev.push({ type: 'FREEZE_USE', source: actor.name, target: target.name });
-      return this.finalize(ev);
-    }
-
     ev.push({ type: 'ATTACK', actor: actor.name, target: target.name });
     const guaranteed = actor.isHero && this.hero.trueHitCharge > 0 ? (this.hero.trueHitCharge--, true) : false;
 

@@ -11,7 +11,6 @@ export const SKILL_DATA = {
   CHAIN_COMBO_CHANCE: 0.7,
 
   // Freeze
-  FREEZE_COMBO_CHANCE: 0.5,
   FREEZE_CHARGE_MIN: 1,
   FREEZE_CHARGE_MAX: 3,
 
