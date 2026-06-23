@@ -302,3 +302,22 @@ Menampilkan:
 Tanpa animasi dan tanpa delay.
 
 Mode ini dipersiapkan untuk pengembangan berikutnya.
+
+---
+
+# 14. Stage Progression Bonus Skill
+
+## Deskripsi
+
+Setiap kali Hero naik ke Stage berikutnya:
+
+* Hero mendapatkan kesempatan memilih 1 Skill tambahan.
+* Skill yang ditawarkan dipilih secara acak dari skill yang belum dimiliki.
+* Skill yang sudah dipilih sebelumnya tidak akan muncul lagi.
+* Pemain dapat memilih untuk mengambil skill tersebut atau melewatinya.
+
+## Aturan
+
+* Jika semua 11 skill sudah dimiliki, tidak ada skill yang ditawarkan.
+* Skill baru langsung aktif saat battle stage berikutnya dimulai.
+* Tidak ada batasan jumlah maksimal skill setelah bonus stage. (Awal hanya 4, bisa bertambah).

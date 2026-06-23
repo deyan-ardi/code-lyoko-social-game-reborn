@@ -12,6 +12,7 @@ let hpMultiplier = 1;
 let battleEngine = null;
 let eventQueue = [];
 let eventTimer = null;
+let currentBonusSkill = null;
 
 const $ = id => document.getElementById(id);
 
@@ -19,11 +20,15 @@ const heroSelectEl = $('hero-select');
 const skillSelectEl = $('skill-select');
 const battleSectionEl = $('battle-section');
 const resultSectionEl = $('result-section');
+const bonusSectionEl = $('bonus-section');
 const stageInfoEl = $('stage-info');
 const heroInfoEl = $('hero-info');
 const skillListEl = $('skill-list');
 const selectedCountEl = $('selected-count');
 const startBtn = $('start-btn');
+const bonusSkillCardEl = $('bonus-skill-card');
+const btnTakeSkill = $('btn-take-skill');
+const btnSkipSkill = $('btn-skip-skill');
 
 const battleLog = new BattleLog($('battle-log'));
 const renderer = new Renderer(
@@ -35,7 +40,8 @@ const renderer = new Renderer(
 );
 
 function showSection(el) {
-  [heroSelectEl, skillSelectEl, battleSectionEl, resultSectionEl].forEach(s => s.classList.add('hidden'));
+  [heroSelectEl, skillSelectEl, battleSectionEl, resultSectionEl, bonusSectionEl]
+    .forEach(s => s.classList.add('hidden'));
   el.classList.remove('hidden');
 }
 
@@ -100,7 +106,7 @@ startBtn.addEventListener('click', () => {
 
 function startBattle() {
   if (eventTimer) { clearTimeout(eventTimer); eventTimer = null; }
-  eventQueue = [];
+  eventQueue = []; pendingDamage = {};
 
   hero = createHero(selectedSkills, hpMultiplier);
   const enemies = generateStage(currentStage);
@@ -115,6 +121,30 @@ function startBattle() {
   processNextEvent();
 }
 
+let pendingDamage = {};
+
+function findEntity(name) {
+  if (hero && hero.name === name) return hero;
+  for (const e of battleEngine.enemies) {
+    if (e.name === name) return e;
+  }
+  for (const c of battleEngine.clones) {
+    if (c.name === name) return c;
+  }
+  return null;
+}
+
+function buildPendingDamage(events) {
+  const pending = {};
+  for (const ev of events) {
+    const dmg = ev.amount || ev.damage || 0;
+    if (dmg && ev.target) {
+      pending[ev.target] = (pending[ev.target] || 0) + dmg;
+    }
+  }
+  return pending;
+}
+
 function processNextEvent() {
   if (eventQueue.length === 0) {
     const events = battleEngine.runTurn();
@@ -123,12 +153,28 @@ function processNextEvent() {
       return;
     }
     eventQueue = events.slice();
+    pendingDamage = buildPendingDamage(eventQueue);
   }
 
   const ev = eventQueue.shift();
   battleLog.addEvents([ev]);
-  renderer.render(hero, battleEngine.enemies, battleEngine.clones);
+
+  const hpOverrides = {};
+  for (const [name, total] of Object.entries(pendingDamage)) {
+    if (total > 0) {
+      const e = findEntity(name);
+      if (e) hpOverrides[name] = e.hp + total;
+    }
+  }
+
+  renderer.render(hero, battleEngine.enemies, battleEngine.clones, hpOverrides);
   renderer.animateEvent(ev);
+
+  const dmg = ev.amount || ev.damage || 0;
+  if (dmg && ev.target && pendingDamage[ev.target] !== undefined) {
+    pendingDamage[ev.target] -= dmg;
+    if (pendingDamage[ev.target] <= 0) delete pendingDamage[ev.target];
+  }
 
   eventTimer = setTimeout(processNextEvent, eventDelay(ev));
 }
@@ -161,11 +207,40 @@ function showResult() {
     if (result === 'victory') {
       currentStage++;
       hpMultiplier *= 1.5;
+      showBonusSkill();
+    } else {
+      startBattle();
     }
-    startBattle();
   }, { once: true });
 
   $('btn-next').disabled = result !== 'victory';
+}
+
+function showBonusSkill() {
+  const available = SKILLS.filter(s => !selectedSkills.includes(s.id));
+  if (available.length === 0) {
+    startBattle();
+    return;
+  }
+
+  currentBonusSkill = available[Math.floor(Math.random() * available.length)];
+
+  bonusSkillCardEl.innerHTML = `
+    <div class="skill-card selected">
+      <div class="skill-name">${currentBonusSkill.name}</div>
+      <div class="skill-desc">${currentBonusSkill.description}</div>
+    </div>`;
+
+  showSection(bonusSectionEl);
+
+  btnTakeSkill.onclick = () => {
+    selectedSkills.push(currentBonusSkill.id);
+    startBattle();
+  };
+
+  btnSkipSkill.onclick = () => {
+    startBattle();
+  };
 }
 
 initHeroSelect();

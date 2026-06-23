@@ -37,7 +37,7 @@
 2. **Skill Select** — pick up to 4 of 11 skills from grid (tap to toggle).
 3. **Battle** — auto-runs at variable per-event delays; arena shows HP bars, log streams events.
 4. **Result** — displays winner, Total Damage, Crits, Dodges, Counters.
-5. **Next Stage** (if won) increments stage, scales hero HP ×1.5, restores HP full. **Retry** returns to skill select.
+5. **Next Stage** (if won) increments stage, scales hero HP ×1.5, restores HP full, then offers 1 random unselected bonus skill. **Retry** returns to skill select.
 
 ## Key mechanics
 

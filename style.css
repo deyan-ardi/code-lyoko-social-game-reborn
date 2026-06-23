@@ -168,8 +168,13 @@ button:disabled { opacity: 0.4; cursor: default; }
 .stats { margin: 16px 0; }
 .stats p { padding: 4px 0; color: #8395a7; }
 
-#result-section button {
+#result-section button, #bonus-section button {
   margin: 8px;
+}
+#bonus-section { text-align: center; }
+#bonus-skill-card {
+  max-width: 300px;
+  margin: 16px auto;
 }
 
 /* ====== FX Animations ====== */
