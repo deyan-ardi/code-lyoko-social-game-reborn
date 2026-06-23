@@ -13,8 +13,8 @@ export const STAGE_LAYOUT = [
   { enemyCount: 1, isBoss: false },
   { enemyCount: 2, isBoss: false },
   { enemyCount: 3, isBoss: false },
-  { enemyCount: 4, isBoss: false },
-  { enemyCount: 1, isBoss: true, bossHpMul: 2, bossSpeedMul: 1.2 }
+  { enemyCount: 3, isBoss: false },
+  { enemyCount: 1, isBoss: true, bossHpMul: 3, bossSpeedMul: 3 }
 ];
 
 export function getStageConfig(stage) {

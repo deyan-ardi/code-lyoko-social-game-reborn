@@ -1,3 +1,5 @@
+import { SKILL_DATA } from '../constants/skill-data.js';
+
 const DAMAGE_MIN = 10;
 const DAMAGE_MAX = 20;
 
@@ -8,7 +10,7 @@ export function calculateBaseDamage() {
 export function checkHit(attacker, target, guaranteed) {
   if (guaranteed) return true;
   let hitChance = attacker.accuracy - target.dodgeChance;
-  if (attacker.hunter) hitChance += 0.1;
+  if (attacker.hunter) hitChance += SKILL_DATA.HUNTER_ACCURACY_BONUS;
   return Math.random() < hitChance;
 }
 

@@ -91,7 +91,7 @@ export class Renderer {
         const goRight = actorIsHero;
         el = document.createElement('div');
         el.className = goRight ? 'fx-projectile' : 'fx-projectile-reverse';
-        el.textContent = goRight ? '• →' : '← •';
+        el.textContent = goRight ? '💣 →' : '← 💣';
         fx.appendChild(el);
         el.addEventListener('animationend', () => el.remove());
         break;
@@ -136,7 +136,7 @@ export class Renderer {
       case 'MISS':
         el = document.createElement('div');
         el.className = 'fx-miss';
-        el.textContent = '~';
+        el.textContent = '~ MISS';
         el.style.left = posPct;
         fx.appendChild(el);
         el.addEventListener('animationend', () => el.remove());

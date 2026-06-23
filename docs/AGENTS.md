@@ -17,7 +17,7 @@
 
 | Directory   | Contents |
 |-------------|----------|
-| `src/constants/` | `hero-data.js` (HERO_BASE stats), `enemy-data.js` (ENEMY_STATS, CYCLE_SCALE, STAGE_LAYOUT) |
+| `src/constants/` | `hero-data.js` (HERO_BASE stats), `enemy-data.js` (ENEMY_STATS, CYCLE_SCALE, STAGE_LAYOUT), `skill-data.js` (SKILL_DATA — trigger chances, ratios, ranges, standalone/combo) |
 | `src/engine/` | `battle-engine.js` (orchestrates turns, events, stats), `turn-manager.js` (speed-based turn queue), `damage-calculator.js` (hit/dodge/crit/counter checks, DAMAGE_MIN/MAX) |
 | `src/models/` | `hero.js` (factory + passive skill application), `enemy.js` (random stat gen using CYCLE_SCALE), `skill.js` (11 skill definitions) |
 | `src/systems/` | `skill-system.js` (battle-start / on-attack triggers), `effect-system.js` (targeting/end helpers), `stage-generator.js` (enemy waves per stage) |
@@ -89,6 +89,7 @@ All tuning values are centralized:
 |------|-----------|---------|
 | `src/constants/hero-data.js` | HERO_BASE (hp, speed, accuracy, critChance, dodgeChance, counterChance) | `hero.js`, `app.js` (hero select display) |
 | `src/constants/enemy-data.js` | ENEMY_STATS (hp/speed/accuracy ranges), CYCLE_SCALE (1.5), STAGE_LAYOUT (5 entries) | `enemy.js`, `stage-generator.js` |
+| `src/constants/skill-data.js` | SKILL_DATA (trigger chances, splash ratios, standalone/combo chances, charge ranges, hunter bonus) | `skill-system.js`, `battle-engine.js`, `damage-calculator.js` |
 | `src/engine/damage-calculator.js` | DAMAGE_MIN (10), DAMAGE_MAX (20) | Internal damage formula |
 
 ## Key mechanics
@@ -99,13 +100,14 @@ All tuning values are centralized:
 - **Dodge**: separate check after hit — heroes can dodge enemy attacks.
 - **Damage formula**: base = Random(10–20); crit doubles final.
 - **Clones** (Shadow Clone): 5% chance at battle start. Enemies target clones first. Clones have 1 HP.
-- **Freeze** (Frost Control): hero can skip one enemy's turn per charge.
-- **True Strike**: auto-consume charge for guaranteed hit (bypasses accuracy/dodge).
-- **Chain Lightning**: 5% on hero attack — 50% splash to other enemies.
-- **Reflect Chaos**: 10% when hero is hit — takes 10%, reflects 90% to attacker.
+- **Freeze** (Frost Control): hero gains 1–3 charges. Each turn, 50% chance: standalone (freeze only, skip attack) or combo (attack + freeze on-hit).
+- **True Strike**: auto-consume charge for guaranteed hit (bypasses accuracy/dodge). Gains 1–3 charges at battle start.
+- **Chain Lightning**: 5% on hero attack — 70% combo (50% splash), 30% standalone (100% splash).
+- **Reflect Chaos**: 10% when hero is hit — 70% combo (take 10%, reflect 90%), 30% standalone (take 0%, reflect 100%).
 - **Counter**: checked after taking damage. Hero can counter-attack.
 - **Hero scaling**: after each victory, max HP ×1.5 (compound), HP restored to full.
 - **Enemy scaling**: per cycle (5 stages): base HP range ×CYCLE_SCALE each cycle.
+- **Skill combo system**: each skill rolls standalone vs combo independently per trigger. All constants in `src/constants/skill-data.js`.
 
 ## Developer commands
 

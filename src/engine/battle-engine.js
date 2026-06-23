@@ -2,6 +2,7 @@ import { TurnManager } from './turn-manager.js';
 import { calculateBaseDamage, checkHit, checkCrit, checkDodge, checkCounter } from './damage-calculator.js';
 import { applyBattleStartSkills, checkOnAttack } from '../systems/skill-system.js';
 import { getFirstAliveEnemy, getRandomAliveEnemy, getFirstClone, isBattleOver } from '../systems/effect-system.js';
+import { SKILL_DATA } from '../constants/skill-data.js';
 
 export class BattleEngine {
   constructor(hero, enemies) {
@@ -45,7 +46,12 @@ export class BattleEngine {
     const target = this.resolveTarget(actor);
     if (!target) return this.finalize(ev);
 
-    if (this.tryFreeze(actor, target, ev)) return this.finalize(ev);
+    if (actor.isHero && this.hero.freezeCharge > 0 && !target.isClone && Math.random() > SKILL_DATA.FREEZE_COMBO_CHANCE) {
+      this.hero.freezeCharge--;
+      target.frozenTurns = 1;
+      ev.push({ type: 'FREEZE_USE', source: actor.name, target: target.name });
+      return this.finalize(ev);
+    }
 
     ev.push({ type: 'ATTACK', actor: actor.name, target: target.name });
     const guaranteed = actor.isHero && this.hero.trueHitCharge > 0 ? (this.hero.trueHitCharge--, true) : false;
@@ -62,7 +68,7 @@ export class BattleEngine {
       ev.push({ type: 'CRITICAL', actor: actor.name });
     }
 
-    if (target.isHero && this.hero.hasReflectChaos && Math.random() < 0.1) {
+    if (target.isHero && this.hero.hasReflectChaos && Math.random() < SKILL_DATA.REFLECT_CHANCE) {
       this.handleReflect(actor, target, damage, ev);
     } else {
       this.applyDamage(actor, target, damage, ev);
@@ -96,12 +102,11 @@ export class BattleEngine {
     return (clone && clone.isAlive) ? clone : this.hero;
   }
 
-  tryFreeze(actor, target, ev) {
-    if (!actor.isHero || this.hero.freezeCharge < 1 || target.isClone) return false;
+  applyFreezeOnHit(attacker, target, ev) {
+    if (!attacker.isHero || this.hero.freezeCharge < 1 || target.isClone) return;
     this.hero.freezeCharge--;
     target.frozenTurns = 1;
-    ev.push({ type: 'FREEZE_USE', source: actor.name, target: target.name });
-    return true;
+    ev.push({ type: 'FREEZE_USE', source: attacker.name, target: target.name });
   }
 
   tryMiss(actor, target, guaranteed, ev) {
@@ -118,12 +123,15 @@ export class BattleEngine {
   }
 
   handleReflect(actor, target, damage, ev) {
-    const reflected = Math.floor(damage * 0.9);
-    const actual = Math.floor(damage * 0.1);
+    const isCombo = Math.random() < SKILL_DATA.REFLECT_COMBO_CHANCE;
+    const takeRatio = isCombo ? SKILL_DATA.REFLECT_COMBO_TAKE : SKILL_DATA.REFLECT_SOLO_TAKE;
+    const sendRatio = isCombo ? SKILL_DATA.REFLECT_COMBO_SEND : SKILL_DATA.REFLECT_SOLO_SEND;
+    const reflected = Math.floor(damage * sendRatio);
+    const actual = Math.floor(damage * takeRatio);
     target.hp -= actual;
     actor.hp -= reflected;
     this.stats.totalDamage += reflected;
-    ev.push({ type: 'REFLECT_CHAOS', target: target.name, attacker: actor.name, reflected, actual });
+    ev.push({ type: 'REFLECT_CHAOS', target: target.name, attacker: actor.name, reflected, actual, combo: isCombo });
     this.checkDeath(actor, ev);
 
     if (target.isAlive && checkCounter(target)) {
@@ -139,6 +147,7 @@ export class BattleEngine {
     target.hp -= damage;
     if (actor.isHero) this.stats.totalDamage += damage;
     ev.push({ type: 'DAMAGE', target: target.name, amount: damage });
+    this.applyFreezeOnHit(actor, target, ev);
 
     if (target.hp <= 0) {
       target.isAlive = false;
@@ -154,18 +163,22 @@ export class BattleEngine {
   handleCounter(counterAttacker, originalAttacker, ev) {
     const counterDmg = calculateBaseDamage();
 
-    if (originalAttacker.isHero && this.hero.hasReflectChaos && Math.random() < 0.1) {
-      const actual = Math.floor(counterDmg * 0.1);
-      const reflected = Math.floor(counterDmg * 0.9);
+    if (originalAttacker.isHero && this.hero.hasReflectChaos && Math.random() < SKILL_DATA.REFLECT_CHANCE) {
+      const isCombo = Math.random() < SKILL_DATA.REFLECT_COMBO_CHANCE;
+      const takeRatio = isCombo ? SKILL_DATA.REFLECT_COMBO_TAKE : SKILL_DATA.REFLECT_SOLO_TAKE;
+      const sendRatio = isCombo ? SKILL_DATA.REFLECT_COMBO_SEND : SKILL_DATA.REFLECT_SOLO_SEND;
+      const actual = Math.floor(counterDmg * takeRatio);
+      const reflected = Math.floor(counterDmg * sendRatio);
       originalAttacker.hp -= actual;
       counterAttacker.hp -= reflected;
       this.stats.totalDamage += reflected;
-      ev.push({ type: 'REFLECT_CHAOS', target: originalAttacker.name, attacker: counterAttacker.name, reflected, actual });
+      ev.push({ type: 'REFLECT_CHAOS', target: originalAttacker.name, attacker: counterAttacker.name, reflected, actual, combo: isCombo });
       this.checkDeath(counterAttacker, ev);
     } else {
       originalAttacker.hp -= counterDmg;
       if (counterAttacker.isHero) this.stats.counters++;
       ev.push({ type: 'COUNTER', actor: counterAttacker.name, target: originalAttacker.name, damage: counterDmg });
+      this.applyFreezeOnHit(counterAttacker, originalAttacker, ev);
       this.checkDeath(originalAttacker, ev);
     }
   }
