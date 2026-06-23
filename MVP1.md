@@ -1,610 +1,304 @@
-# Code Lyoko Social Game Inspired - Battle Prototype MVP
-
-## 1. Tujuan Project
-
-Membuat prototype game browser berbasis auto battle yang terinspirasi dari Code Lyoko Social Game.
-
-Fokus MVP hanya pada:
-
-* Core Battle Engine
-* Hero Selection
-* Skill Selection
-* Battle Simulation
-* Battle Replay Visualization
-* Stage Progression
-
-Tidak perlu:
-
-* Login
-* Database
-* Multiplayer
-* Equipment
-* Inventory
-* Quest
-* Guild
-* Shop
-* Save Data
-
-Semua data dapat disimpan sementara di memory browser.
-
 ---
 
-# 2. Konsep Permainan
+# 10.1 Stage Progression Rules
 
-Pemain memilih:
+## Hero Scaling
 
-* 1 Hero
-* Maksimal 4 Passive Skill
+Setelah Hero memenangkan Stage:
 
-Setelah tombol Start ditekan:
-
-1. Sistem membuat seluruh konfigurasi battle.
-2. Sistem menghasilkan musuh berdasarkan stage.
-3. Battle Engine mulai berjalan.
-4. Battle Log dicatat setiap aksi.
-5. UI menampilkan pertarungan secara visual.
-6. Sistem menentukan pemenang.
-7. Hasil pertarungan ditampilkan.
-8. Pemain dapat melanjutkan stage berikutnya atau retry.
-
----
-
-# 3. Teknologi MVP
-
-## Frontend
-
-* HTML
-* CSS
-* Vanilla JavaScript
-
-## Arsitektur
-
-Battle Engine dipisahkan dari UI.
-
-Folder Structure:
-
-/src
-/engine
-battle-engine.js
-turn-manager.js
-damage-calculator.js
-
-```
-/models
-    hero.js
-    enemy.js
-    skill.js
-
-/systems
-    skill-system.js
-    effect-system.js
-    stage-generator.js
-
-/ui
-    renderer.js
-    battle-log.js
-
-app.js
-```
-
----
-
-# 4. Tampilan MVP
-
-Hero direpresentasikan menggunakan:
-
-O
-
-Musuh direpresentasikan menggunakan:
-
-X
+* Hero melanjutkan ke Stage berikutnya.
+* HP Hero dipulihkan menjadi penuh.
+* Maximum HP Hero bertambah sebesar 50% dari Maximum HP sebelumnya.
 
 Contoh:
 
-O
-
-HP: 100
-
----
-
-X    X    X
-
-HP   HP   HP
-
----
-
-Battle Log
-
-Hero attacks Enemy #1
-Damage 12
-
-Enemy #1 attacks Hero
-Damage 8
-
----
-
-# 5. Flow Permainan
-
-## State 1
-
-Hero Selection
-
-Pemain memilih Hero.
-
-Untuk MVP hanya tersedia:
-
-Hero Alpha
-
----
-
-## State 2
-
-Skill Selection
-
-Pemain memilih maksimal 4 skill.
-
----
-
-## State 3
-
-Battle Start
-
-Battle Engine dibuat.
-
----
-
-## State 4
-
-Battle Running
-
-Battle berjalan otomatis.
-
----
-
-## State 5
-
-Battle Result
-
-Menampilkan:
-
-* Winner
-* Total Damage
-* Critical Hit
-* Dodge Count
-* Counter Count
-
----
-
-## State 6
-
-Next Stage
-
-Atau Retry.
-
----
-
-# 6. Hero Base Stat
-
-Hero Alpha
-
-HP: 100
-Speed: 50
-Accuracy: 50%
-
-Crit Chance: 5%
-Dodge Chance: 1%
-Counter Chance: 1%
-
-Clone Chance: 0%
-Shock Chance: 0%
-Freeze Charge: 0
-True Hit Charge: 0
-
-Redirect Chance: 1%
-
----
-
-# 7. Enemy Generation
-
-Setiap stage menghasilkan musuh secara random.
-
-## HP
-
-80 - 120
-
-## Speed
-
-40 - 60
-
-## Accuracy
-
-40% - 60%
-
-## Crit Chance
-
-0% - 10%
-
-## Dodge Chance
-
-0% - 10%
-
-## Counter Chance
-
-0% - 10%
-
----
-
-# 8. Stage System
-
 Stage 1
 
-1 Enemy
+HP = 100
 
 Stage 2
 
-2 Enemy
+HP = 150
 
 Stage 3
 
-3 Enemy
+HP = 225
 
 Stage 4
 
-4 Enemy
+HP = 337
 
 Stage 5
 
-Boss
-
-Kemudian loop kembali dengan scaling stat.
+HP = 505
 
 ---
 
-# 9. Battle Rules
+## Enemy Scaling
 
-## Turn Order
+Setelah melewati Stage 5:
 
-Ditentukan berdasarkan Speed.
+* Jumlah musuh mengikuti pola Stage System.
+* Stat musuh meningkat secara bertahap.
 
-Semakin tinggi Speed semakin cepat mendapatkan giliran.
+Contoh:
+
+Cycle 1
+
+HP = 80 - 120
+
+Cycle 2
+
+HP = 120 - 180
+
+Cycle 3
+
+HP = 180 - 270
+
+Scaling disesuaikan secara otomatis oleh Stage Generator.
 
 ---
 
-## Targeting
+# 10.2 Dynamic Damage Rules
 
-Hero dan musuh dapat menyerang target secara dinamis.
+Damage tidak boleh bersifat tetap.
 
-Saat giliran Hero:
-- Target dipilih secara acak dari musuh yang masih hidup.
-- Probabilitas ditentukan oleh sistem (setiap musuh memiliki kesempatan yang sama).
+Setiap serangan harus menghasilkan nilai yang berbeda.
 
-Saat giliran Musuh:
-- Jika ada Clone, musuh wajib menyerang Clone terlebih dahulu.
-- Jika tidak ada Clone, musuh menyerang Hero.
+Formula:
+
+Base Damage =
+Random(10 - 20)
+
+Final Damage =
+Base Damage + Modifier
+
+Modifier berasal dari:
+
+* Skill
+* Critical Hit
+* Status Effect
 
 ---
 
-## Accuracy Check
+## Critical Hit
 
-Saat menyerang:
+Hero dan Musuh dapat menghasilkan Critical Hit.
 
-Hit Chance =
+Jika Critical Hit terjadi:
 
-Accuracy - Dodge Chance
+Final Damage =
+Final Damage × 2
 
-Jika gagal:
+Battle Log wajib menampilkan:
+
+CRITICAL HIT
+
+Critical Hit harus menjadi salah satu sumber damage tertinggi selama battle berlangsung.
+
+---
+
+# 10.3 Combat Animation Rules
+
+Karena belum tersedia asset gambar:
+
+Sistem menggunakan karakter sederhana dan animasi CSS.
+
+Representasi:
+
+Hero = O
+
+Enemy = X
+
+Projectile = .
+
+Impact = *
+
+Critical = !
+
+Clone = O O O
+
+Freeze = ❄
+
+Miss = ~
+
+Counter = ↩
+
+---
+
+## Hero Attack Animation
+
+Contoh:
+
+O . . . . X
+
+atau
+
+O -----> X
+
+---
+
+## Critical Attack Animation
+
+Contoh:
+
+O ======> X
+
+CRITICAL HIT !
+
+---
+
+## Dodge Animation
+
+Contoh:
+
+O ~
 
 MISS
 
 ---
 
-## Critical Check
+## Counter Animation
 
-Jika berhasil mengenai target:
+Contoh:
 
-Damage x 2
+X -----> O
 
----
+COUNTER
 
-## Counter Check
-
-Saat menerima serangan:
-
-Counter Chance
-
-Jika berhasil:
-
-Serangan langsung dibalas.
+O -----> X
 
 ---
 
-## Death
+## Clone Animation
 
-HP <= 0
+Contoh:
 
-Karakter mati.
+O O O
 
----
+Clone muncul sebelum battle dimulai.
 
-## Victory
-
-Semua musuh mati.
+Clone menerima serangan terlebih dahulu.
 
 ---
 
-## Defeat
+## Freeze Animation
 
-Hero mati.
+Contoh:
 
----
+X ❄
 
-# 10. Damage Formula
-
-Formula awal:
-
-Damage =
-10 + Random(1 - 10)
-
-Critical:
-
-Damage x 2
+Target kehilangan giliran.
 
 ---
 
-# 11. Skill System
+## Reflect Animation
 
-Pemain memilih maksimal 4 skill.
+Contoh:
 
----
+X -----> O
 
-## Skill 1
+REFLECT
 
-Quick Reflex
-
-Effect:
-
-Speed +10
+O -----> X
 
 ---
 
-## Skill 2
+## Death Animation
 
-Agile
+Contoh:
 
-Effect:
+X
 
-Dodge +10%
+↓
 
----
+*
 
-## Skill 3
+↓
 
-Counter Master
-
-Effect:
-
-Counter +10%
+hilang
 
 ---
 
-## Skill 4
+# 13.1 Animation Playback System
 
-Shadow Clone
+Battle Engine tidak boleh mengontrol animasi.
 
-Battle Start:
-
-5% chance aktif.
-
-Jika aktif:
-
-Memunculkan 1 - 3 Clone.
-
-Clone menerima serangan sebelum Hero.
-
-Clone memiliki:
-
-HP = 1
-
-Jika terkena serangan langsung hilang.
-
----
-
-## Skill 5
-
-Chain Lightning
-
-Saat menyerang:
-
-5% chance aktif.
-
-Jika aktif:
-
-Target utama menerima damage penuh.
-
-Musuh lain menerima:
-
-50% damage.
-
----
-
-## Skill 6
-
-Sharpshooter
-
-Effect:
-
-Accuracy +10%
-
-Crit Chance +10%
-
----
-
-## Skill 7
-
-Hunter
-
-Effect:
-
-Mengurangi Dodge musuh sebesar 10%.
-
----
-
-## Skill 8
-
-Frost Control
-
-Saat battle dimulai:
-
-Mendapatkan 1 - 3 Freeze Charge.
-
-Saat charge digunakan:
-
-Target kehilangan 1 turn.
-
----
-
-## Skill 9
-
-True Strike
-
-Saat battle dimulai:
-
-Mendapatkan 1 - 3 True Hit Charge.
-
-Saat digunakan:
-
-Serangan pasti mengenai target.
-
----
-
-## Skill 10
-
-Reflect Chaos
-
-Saat terkena serangan:
-
-10% chance aktif.
-
-Jika aktif:
-
-90% damage dikembalikan ke musuh.
-
-10% damage tetap diterima Hero.
-
----
-
-## Skill 11
-
-Vitality
-
-Effect:
-
-HP +10
-
----
-
-# 12. Battle Log Format
-
-Contoh (target dipilih secara dinamis):
-
-[Turn 1]
-
-Hero attacks Enemy #2
-
-Damage 12
-
-Enemy #2 HP = 88
-
-[Turn 2]
-
-Enemy #1 attacks Hero
-
-Damage 8
-
-Hero HP = 92
-
-[Turn 3]
-
-Hero attacks Enemy #1 (Critical Hit)
-
-Damage 24
-
-Enemy #1 HP = 76
-
----
-
-# 13. Battle Replay System
-
-Battle Engine wajib menyimpan seluruh event.
+Battle Engine hanya menghasilkan Event.
 
 Contoh:
 
 events = [
 attack,
+projectile,
+hit,
 damage,
 critical,
 dodge,
 freeze,
+counter,
 death
 ]
 
-UI hanya membaca event tersebut.
-
-Dengan cara ini:
-
-Battle Engine dan UI terpisah.
+UI Renderer bertugas menerjemahkan event menjadi animasi.
 
 ---
 
-# 14. MVP Success Criteria
+# 13.2 Turn Delay System
 
-Prototype dianggap berhasil jika:
+Setiap aksi battle harus memiliki jeda.
 
-✓ Hero dapat dipilih
+Tujuan:
 
-✓ Maksimal 4 skill dapat dipilih
+* Pemain dapat mengikuti alur cerita battle.
+* Animasi dapat dimainkan.
+* Battle Log dapat dibaca.
 
-✓ Musuh dapat dibuat random
+Default:
 
-✓ Battle dapat berjalan otomatis
+800ms - 1200ms per action.
 
-✓ Battle log tampil
+Contoh:
 
-✓ Winner dapat ditentukan
+Attack
 
-✓ Retry berfungsi
+↓ 800ms
 
-✓ Next Stage berfungsi
+Projectile
 
-✓ Semua skill dapat aktif sesuai probabilitas
+↓ 800ms
 
-✓ Battle dapat diputar ulang menggunakan event log
+Impact
+
+↓ 800ms
+
+Damage
+
+↓ 800ms
+
+Next Turn
 
 ---
 
-# 15. Future Development
+# 13.3 Battle Speed Mode
 
-Setelah MVP selesai:
+Sistem harus mendukung:
 
-Phase 2
+## Normal Mode
 
-* Hero Class
-* Equipment
-* Level System
-* Skill Tree
-* Sector System
-* Boss Mechanic
+Menampilkan:
 
-Phase 3
+* Animasi
+* Battle Log
+* Delay
 
-* Account System
-* Inventory
-* Save Progress
-* PvP Arena
+## Fast Forward Mode
 
-Phase 4
+Menampilkan:
 
-* Multiplayer
-* Guild
-* Ranking
-* Seasonal Event
+* Battle Log
+* Hasil Battle
+
+Tanpa animasi dan tanpa delay.
+
+Mode ini dipersiapkan untuk pengembangan berikutnya.

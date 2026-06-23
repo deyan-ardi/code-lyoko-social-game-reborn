@@ -1,20 +1,22 @@
 import { getSkill } from './skill.js';
+import { HERO_BASE } from '../constants/hero-data.js';
 
-export function createHero(skillIds = []) {
+export function createHero(skillIds = [], hpMultiplier = 1) {
+  const baseMaxHp = Math.floor(HERO_BASE.hp * hpMultiplier);
   const hero = {
-    name: 'Hero Alpha',
-    hp: 100,
-    maxHp: 100,
-    speed: 50,
-    accuracy: 0.5,
-    critChance: 0.05,
-    dodgeChance: 0.01,
-    counterChance: 0.01,
+    name: HERO_BASE.name,
+    hp: baseMaxHp,
+    maxHp: baseMaxHp,
+    speed: HERO_BASE.speed,
+    accuracy: HERO_BASE.accuracy,
+    critChance: HERO_BASE.critChance,
+    dodgeChance: HERO_BASE.dodgeChance,
+    counterChance: HERO_BASE.counterChance,
     cloneChance: 0,
     shockChance: 0,
     freezeCharge: 0,
     trueHitCharge: 0,
-    redirectChance: 0.01,
+    redirectChance: HERO_BASE.redirectChance,
     isAlive: true,
     isHero: true,
     hunter: false,

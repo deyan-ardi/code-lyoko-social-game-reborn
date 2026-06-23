@@ -5,13 +5,13 @@ import { BattleEngine } from './engine/battle-engine.js';
 import { BattleLog } from './ui/battle-log.js';
 import { Renderer } from './ui/renderer.js';
 
-const STATE = { HERO_SELECT: 0, SKILL_SELECT: 1, BATTLE: 2, RESULT: 3 };
-let currentState = STATE.HERO_SELECT;
 let hero = null;
 let selectedSkills = [];
 let currentStage = 1;
+let hpMultiplier = 1;
 let battleEngine = null;
-let battleInterval = null;
+let eventQueue = [];
+let eventTimer = null;
 
 const $ = id => document.getElementById(id);
 
@@ -30,7 +30,8 @@ const renderer = new Renderer(
   $('battle-arena'),
   $('hero-area'),
   $('enemies-area'),
-  $('clones-area')
+  $('clones-area'),
+  $('fx-layer')
 );
 
 function showSection(el) {
@@ -44,7 +45,7 @@ function initHeroSelect() {
       <div class="entity-symbol">O</div>
       <h3>Hero Alpha</h3>
       <ul>
-        <li>HP: 100</li>
+        <li>HP: ${Math.floor(100 * hpMultiplier)}</li>
         <li>Speed: 50</li>
         <li>Accuracy: 50%</li>
         <li>Crit: 5%</li>
@@ -98,7 +99,10 @@ startBtn.addEventListener('click', () => {
 });
 
 function startBattle() {
-  hero = createHero(selectedSkills);
+  if (eventTimer) { clearTimeout(eventTimer); eventTimer = null; }
+  eventQueue = [];
+
+  hero = createHero(selectedSkills, hpMultiplier);
   const enemies = generateStage(currentStage);
   battleEngine = new BattleEngine(hero, enemies);
   battleEngine.start();
@@ -108,17 +112,38 @@ function startBattle() {
   renderer.render(hero, enemies, []);
   $('result-section').classList.add('hidden');
 
-  battleInterval = setInterval(() => {
+  processNextEvent();
+}
+
+function processNextEvent() {
+  if (eventQueue.length === 0) {
     const events = battleEngine.runTurn();
     if (!events) {
-      clearInterval(battleInterval);
-      battleInterval = null;
       showResult();
       return;
     }
-    battleLog.addEvents(events);
-    renderer.render(hero, battleEngine.enemies, battleEngine.clones);
-  }, 700);
+    eventQueue = events.slice();
+  }
+
+  const ev = eventQueue.shift();
+  battleLog.addEvents([ev]);
+  renderer.render(hero, battleEngine.enemies, battleEngine.clones);
+  renderer.animateEvent(ev);
+
+  eventTimer = setTimeout(processNextEvent, eventDelay(ev));
+}
+
+function eventDelay(ev) {
+  switch (ev.type) {
+    case 'TURN_START': return 600;
+    case 'ATTACK': case 'COUNTER': case 'REFLECT_CHAOS': return 900;
+    case 'CRITICAL': return 1100;
+    case 'DAMAGE': case 'CHAIN_LIGHTNING': return 500;
+    case 'DEATH': case 'CLONE_DESTROYED': return 800;
+    case 'VICTORY': case 'DEFEAT': return 1500;
+    case 'DODGE': case 'MISS': return 600;
+    default: return 400;
+  }
 }
 
 function showResult() {
@@ -133,7 +158,10 @@ function showResult() {
   }, { once: true });
 
   $('btn-next').addEventListener('click', () => {
-    if (result === 'victory') currentStage++;
+    if (result === 'victory') {
+      currentStage++;
+      hpMultiplier *= 1.5;
+    }
     startBattle();
   }, { once: true });
 

@@ -1,5 +1,5 @@
 export function calculateBaseDamage() {
-  return 10 + Math.floor(Math.random() * 10) + 1;
+  return Math.floor(Math.random() * 11) + 10;
 }
 
 export function checkHit(attacker, target, guaranteed) {
