@@ -10,13 +10,13 @@ export class Renderer {
     this.cloneNames = [];
   }
 
-  render(hero, enemies, clones, hpOverrides) {
+  render(hero, enemies, clones, hpOverrides, pendingDeath) {
     this.heroName = hero.name;
-    this.enemyNames = enemies.filter(e => e.isAlive).map(e => e.name);
-    this.cloneNames = clones.filter(c => c.isAlive).map(c => c.name);
-    this.renderEntity(this.heroEl, hero, 'O', 'hero-entity', hpOverrides);
-    this.renderEnemies(enemies, hpOverrides);
-    this.renderClones(clones, hpOverrides);
+    this.enemyNames = enemies.filter(e => e.isAlive || (pendingDeath && pendingDeath[e.name])).map(e => e.name);
+    this.cloneNames = clones.filter(c => c.isAlive || (pendingDeath && pendingDeath[c.name])).map(c => c.name);
+    this.renderEntity(this.heroEl, hero, 'O', 'hero-entity', hpOverrides, pendingDeath);
+    this.renderEnemies(enemies, hpOverrides, pendingDeath);
+    this.renderClones(clones, hpOverrides, pendingDeath);
   }
 
   isHero(name) { return name === this.heroName; }
@@ -38,12 +38,13 @@ export class Renderer {
     return 50;
   }
 
-  renderEntity(el, entity, symbol, cls, hpOverrides) {
-    if (!entity || !entity.isAlive) {
+  renderEntity(el, entity, symbol, cls, hpOverrides, pendingDeath) {
+    const isPendingDeath = pendingDeath && pendingDeath[entity.name];
+    if (!entity || (!entity.isAlive && !isPendingDeath)) {
       el.innerHTML = '<div class="entity dead">✕</div>';
       return;
     }
-    const displayHp = (hpOverrides && hpOverrides[entity.name] !== undefined) ? hpOverrides[entity.name] : entity.hp;
+    const displayHp = isPendingDeath ? 0 : ((hpOverrides && hpOverrides[entity.name] !== undefined) ? hpOverrides[entity.name] : entity.hp);
     const hpPct = Math.max(0, Math.floor((displayHp / entity.maxHp) * 100));
     el.innerHTML = `
       <div class="entity ${cls}">
@@ -54,22 +55,23 @@ export class Renderer {
       </div>`;
   }
 
-  renderEnemies(enemies, hpOverrides) {
+  renderEnemies(enemies, hpOverrides, pendingDeath) {
     this.enemiesEl.innerHTML = '';
     for (const enemy of enemies) {
       const div = document.createElement('div');
-      this.renderEntity(div, enemy, 'X', 'enemy-entity', hpOverrides);
+      this.renderEntity(div, enemy, 'X', 'enemy-entity', hpOverrides, pendingDeath);
       this.enemiesEl.appendChild(div);
     }
   }
 
-  renderClones(clones, hpOverrides) {
+  renderClones(clones, hpOverrides, pendingDeath) {
     this.clonesEl.innerHTML = '';
     if (!clones || clones.length === 0) return;
     for (const clone of clones) {
-      if (!clone.isAlive) continue;
+      const isPendingDeath = pendingDeath && pendingDeath[clone.name];
+      if (!clone.isAlive && !isPendingDeath) continue;
       const div = document.createElement('div');
-      this.renderEntity(div, clone, 'C', 'clone-entity', hpOverrides);
+      this.renderEntity(div, clone, 'C', 'clone-entity', hpOverrides, pendingDeath);
       this.clonesEl.appendChild(div);
     }
   }

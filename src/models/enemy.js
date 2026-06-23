@@ -1,10 +1,10 @@
-import { ENEMY_STATS } from '../constants/enemy-data.js';
+import { ENEMY_STATS, CYCLE_SCALE } from '../constants/enemy-data.js';
 
 let enemyCounter = 0;
 
 export function createEnemy(stage = 1) {
   const cycle = Math.floor((stage - 1) / 5);
-  const scale = Math.pow(1.5, cycle);
+  const scale = Math.pow(CYCLE_SCALE, cycle);
   enemyCounter++;
   return {
     name: `Enemy #${enemyCounter}`,

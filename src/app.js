@@ -1,3 +1,4 @@
+import { HERO_BASE } from './constants/hero-data.js';
 import { createHero } from './models/hero.js';
 import { SKILLS } from './models/skill.js';
 import { generateStage } from './systems/stage-generator.js';
@@ -12,8 +13,6 @@ let hpMultiplier = 1;
 let battleEngine = null;
 let eventQueue = [];
 let eventTimer = null;
-let currentBonusSkill = null;
-
 const $ = id => document.getElementById(id);
 
 const heroSelectEl = $('hero-select');
@@ -26,8 +25,7 @@ const heroInfoEl = $('hero-info');
 const skillListEl = $('skill-list');
 const selectedCountEl = $('selected-count');
 const startBtn = $('start-btn');
-const bonusSkillCardEl = $('bonus-skill-card');
-const btnTakeSkill = $('btn-take-skill');
+const bonusSkillCardsEl = $('bonus-skill-cards');
 const btnSkipSkill = $('btn-skip-skill');
 
 const battleLog = new BattleLog($('battle-log'));
@@ -49,14 +47,14 @@ function initHeroSelect() {
   heroInfoEl.innerHTML = `
     <div class="hero-card">
       <div class="entity-symbol">O</div>
-      <h3>Hero Alpha</h3>
+      <h3>${HERO_BASE.name}</h3>
       <ul>
-        <li>HP: ${Math.floor(100 * hpMultiplier)}</li>
-        <li>Speed: 50</li>
-        <li>Accuracy: 50%</li>
-        <li>Crit: 5%</li>
-        <li>Dodge: 1%</li>
-        <li>Counter: 1%</li>
+        <li>HP: ${Math.floor(HERO_BASE.hp * hpMultiplier)}</li>
+        <li>Speed: ${HERO_BASE.speed}</li>
+        <li>Accuracy: ${Math.round(HERO_BASE.accuracy * 100)}%</li>
+        <li>Crit: ${Math.round(HERO_BASE.critChance * 100)}%</li>
+        <li>Dodge: ${Math.round(HERO_BASE.dodgeChance * 100)}%</li>
+        <li>Counter: ${Math.round(HERO_BASE.counterChance * 100)}%</li>
       </ul>
     </div>`;
   showSection(heroSelectEl);
@@ -106,7 +104,7 @@ startBtn.addEventListener('click', () => {
 
 function startBattle() {
   if (eventTimer) { clearTimeout(eventTimer); eventTimer = null; }
-  eventQueue = []; pendingDamage = {};
+  eventQueue = []; pendingDamage = {}; pendingDeath = {};
 
   hero = createHero(selectedSkills, hpMultiplier);
   const enemies = generateStage(currentStage);
@@ -122,6 +120,7 @@ function startBattle() {
 }
 
 let pendingDamage = {};
+let pendingDeath = {};
 
 function findEntity(name) {
   if (hero && hero.name === name) return hero;
@@ -134,15 +133,19 @@ function findEntity(name) {
   return null;
 }
 
-function buildPendingDamage(events) {
-  const pending = {};
+function buildPending(events) {
+  const damage = {};
+  pendingDeath = {};
   for (const ev of events) {
     const dmg = ev.amount || ev.damage || 0;
     if (dmg && ev.target) {
-      pending[ev.target] = (pending[ev.target] || 0) + dmg;
+      damage[ev.target] = (damage[ev.target] || 0) + dmg;
+    }
+    if (ev.type === 'DEATH' || ev.type === 'CLONE_DESTROYED') {
+      pendingDeath[ev.target] = true;
     }
   }
-  return pending;
+  return damage;
 }
 
 function processNextEvent() {
@@ -153,7 +156,7 @@ function processNextEvent() {
       return;
     }
     eventQueue = events.slice();
-    pendingDamage = buildPendingDamage(eventQueue);
+    pendingDamage = buildPending(eventQueue);
   }
 
   const ev = eventQueue.shift();
@@ -167,13 +170,17 @@ function processNextEvent() {
     }
   }
 
-  renderer.render(hero, battleEngine.enemies, battleEngine.clones, hpOverrides);
+  renderer.render(hero, battleEngine.enemies, battleEngine.clones, hpOverrides, pendingDeath);
   renderer.animateEvent(ev);
 
   const dmg = ev.amount || ev.damage || 0;
   if (dmg && ev.target && pendingDamage[ev.target] !== undefined) {
     pendingDamage[ev.target] -= dmg;
     if (pendingDamage[ev.target] <= 0) delete pendingDamage[ev.target];
+  }
+
+  if (ev.type === 'DEATH' || ev.type === 'CLONE_DESTROYED') {
+    delete pendingDeath[ev.target];
   }
 
   eventTimer = setTimeout(processNextEvent, eventDelay(ev));
@@ -223,20 +230,24 @@ function showBonusSkill() {
     return;
   }
 
-  currentBonusSkill = available[Math.floor(Math.random() * available.length)];
+  const shuffled = [...available].sort(() => Math.random() - 0.5);
+  const options = shuffled.slice(0, 2);
 
-  bonusSkillCardEl.innerHTML = `
-    <div class="skill-card selected">
-      <div class="skill-name">${currentBonusSkill.name}</div>
-      <div class="skill-desc">${currentBonusSkill.description}</div>
-    </div>`;
+  bonusSkillCardsEl.innerHTML = options.map(s => `
+    <div class="skill-card selected bonus-option" data-id="${s.id}">
+      <div class="skill-name">${s.name}</div>
+      <div class="skill-desc">${s.description}</div>
+    </div>
+  `).join('');
 
   showSection(bonusSectionEl);
 
-  btnTakeSkill.onclick = () => {
-    selectedSkills.push(currentBonusSkill.id);
-    startBattle();
-  };
+  bonusSkillCardsEl.querySelectorAll('.bonus-option').forEach(el => {
+    el.addEventListener('click', () => {
+      selectedSkills.push(el.dataset.id);
+      startBattle();
+    }, { once: true });
+  });
 
   btnSkipSkill.onclick = () => {
     startBattle();

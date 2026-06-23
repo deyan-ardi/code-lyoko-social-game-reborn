@@ -172,9 +172,20 @@ button:disabled { opacity: 0.4; cursor: default; }
   margin: 8px;
 }
 #bonus-section { text-align: center; }
-#bonus-skill-card {
-  max-width: 300px;
-  margin: 16px auto;
+#bonus-skill-cards {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin: 20px 0;
+}
+#bonus-skill-cards .skill-card {
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  width: 220px;
+}
+#bonus-skill-cards .skill-card:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 20px rgba(255,215,0,0.5);
 }
 
 /* ====== FX Animations ====== */

@@ -1,5 +1,8 @@
+const DAMAGE_MIN = 10;
+const DAMAGE_MAX = 20;
+
 export function calculateBaseDamage() {
-  return Math.floor(Math.random() * 11) + 10;
+  return Math.floor(Math.random() * (DAMAGE_MAX - DAMAGE_MIN + 1)) + DAMAGE_MIN;
 }
 
 export function checkHit(attacker, target, guaranteed) {

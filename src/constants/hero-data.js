@@ -1,10 +1,10 @@
 export const HERO_BASE = {
   name: 'Hero Alpha',
-  hp: 100,
-  speed: 50,
+  hp: 150,
+  speed: 75,
   accuracy: 0.5,
   critChance: 0.05,
-  dodgeChance: 0.01,
-  counterChance: 0.01,
-  redirectChance: 0.01
+  dodgeChance: 0.05,
+  counterChance: 0.05,
+  redirectChance: 0.05
 };
