@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CLSG — Battle Prototype</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Code Lyoko Social Game</h1>
+      <div id="stage-info"></div>
+    </header>
+
+    <section id="hero-select">
+      <h2>Select Hero</h2>
+      <div id="hero-info"></div>
+      <button id="confirm-hero">Confirm</button>
+    </section>
+
+    <section id="skill-select" class="hidden">
+      <h2>Select Skills (max 4)</h2>
+      <div id="skill-list"></div>
+      <p>Selected: <span id="selected-count">0 / 4</span></p>
+      <button id="start-btn" disabled>Start Battle</button>
+    </section>
+
+    <section id="battle-section" class="hidden">
+      <h2>Battle</h2>
+      <div id="battle-arena">
+        <div id="clones-area"></div>
+        <div id="hero-area"></div>
+        <div id="vs"><span>VS</span></div>
+        <div id="enemies-area"></div>
+      </div>
+      <div id="battle-log"></div>
+    </section>
+
+    <section id="result-section" class="hidden">
+      <h2>Result</h2>
+      <div id="result-content"></div>
+      <p>Stage: <span id="result-stage"></span></p>
+      <button id="btn-retry">Retry</button>
+      <button id="btn-next">Next Stage</button>
+    </section>
+  </div>
+
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>

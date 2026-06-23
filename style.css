@@ -1,0 +1,165 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #0a0e17;
+  color: #c8d6e5;
+  min-height: 100vh;
+}
+#app {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+header {
+  text-align: center;
+  padding: 20px 0;
+  border-bottom: 1px solid #1e2a3a;
+  margin-bottom: 24px;
+}
+header h1 { color: #48dbfb; font-size: 1.5rem; }
+#stage-info { color: #54a0ff; font-size: 1.1rem; margin-top: 4px; }
+
+.hidden { display: none !important; }
+
+h2 { margin-bottom: 16px; color: #48dbfb; }
+
+button {
+  background: #1e2a3a;
+  color: #c8d6e5;
+  border: 1px solid #2e3a4a;
+  padding: 10px 24px;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+button:hover:not(:disabled) { background: #2e3a4a; }
+button:disabled { opacity: 0.4; cursor: default; }
+
+#hero-select, #skill-select, #result-section { text-align: center; }
+
+.hero-card {
+  display: inline-block;
+  background: #111927;
+  border: 1px solid #1e2a3a;
+  border-radius: 8px;
+  padding: 24px;
+  margin: 16px auto;
+}
+.hero-card ul { list-style: none; text-align: left; margin-top: 12px; }
+.hero-card li { padding: 2px 0; color: #8395a7; }
+.entity-symbol {
+  font-size: 3rem;
+  font-weight: bold;
+  font-family: monospace;
+  line-height: 1;
+}
+
+#skill-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  margin: 16px 0;
+}
+.skill-card {
+  background: #111927;
+  border: 1px solid #1e2a3a;
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+.skill-card:hover { border-color: #2e3a4a; }
+.skill-card.selected { border-color: #48dbfb; background: #0d1b2a; }
+.skill-name { font-weight: bold; color: #48dbfb; margin-bottom: 4px; }
+.skill-desc { font-size: 0.85rem; color: #8395a7; }
+
+#battle-arena {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 20px;
+  background: #111927;
+  border: 1px solid #1e2a3a;
+  border-radius: 8px;
+  min-height: 200px;
+  margin-bottom: 16px;
+}
+#clones-area, #hero-area, #enemies-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  min-width: 80px;
+}
+#vs {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #54a0ff;
+}
+.entity {
+  text-align: center;
+  padding: 10px;
+  background: #0d1b2a;
+  border-radius: 6px;
+  min-width: 80px;
+}
+.entity.dead { opacity: 0.3; }
+.entity-name { font-size: 0.75rem; color: #8395a7; margin: 4px 0; }
+.hp-bar {
+  width: 100%;
+  height: 6px;
+  background: #1e2a3a;
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 4px 0;
+}
+.hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #48dbfb, #0abde3);
+  transition: width 0.3s;
+}
+.entity-hp { font-size: 0.8rem; color: #8395a7; }
+.hero-entity .entity-symbol { color: #48dbfb; }
+.enemy-entity .entity-symbol { color: #ff6b6b; }
+.clone-entity .entity-symbol { color: #feca57; }
+
+#battle-log {
+  background: #080c14;
+  border: 1px solid #1e2a3a;
+  border-radius: 6px;
+  padding: 12px;
+  height: 260px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.log-entry { padding: 1px 0; }
+.log-turn_start { color: #54a0ff; font-weight: bold; margin-top: 8px; }
+.log-actor { color: #8395a7; font-style: italic; }
+.log-attack { color: #c8d6e5; }
+.log-damage { color: #ff6b6b; }
+.log-critical { color: #feca57; font-weight: bold; }
+.log-dodge { color: #48dbfb; }
+.log-miss { color: #576574; }
+.log-counter { color: #ff9ff3; }
+.log-reflect_chaos { color: #a29bfe; }
+.log-chain_lightning { color: #00d2d3; }
+.log-freeze_use { color: #48dbfb; }
+.log-frozen { color: #48dbfb; }
+.log-true_hit_use { color: #54a0ff; }
+.log-clone_created { color: #feca57; }
+.log-clone_destroyed { color: #feca57; }
+.log-death { color: #ff6b6b; }
+.log-victory { color: #4caf50; font-weight: bold; font-size: 1rem; }
+.log-defeat { color: #f44336; font-weight: bold; font-size: 1rem; }
+
+.stats { margin: 16px 0; }
+.stats p { padding: 4px 0; color: #8395a7; }
+
+#result-section button {
+  margin: 8px;
+}
